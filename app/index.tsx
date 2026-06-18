@@ -5,6 +5,7 @@ import {
     ActivityIndicator,
     FlatList,
     Image,
+    Keyboard,
     Pressable,
     StyleSheet,
     Text,
@@ -12,6 +13,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 interface PokeResponse {
     name: string;
     url: string;
@@ -19,25 +21,40 @@ interface PokeResponse {
 
 export default function Index() {
     const [pokemons, setpokemons] = useState<PokeResponse[]>([]);
+    const [searchLimit, setSearchLimit] = useState(""); // 1. New state for the input box
+
     const [fontsLoaded] = useFonts({
         inter: require("@/assets/fonts/Inter-VariableFont_opsz,wght.ttf"),
         inter_italics: require("@/assets/fonts/Inter-Italic-VariableFont_opsz,wght.ttf"),
     });
 
+    // 2. Extract the fetch function so it takes a "limit" parameter
+    const fetchPokemons = async (limit: number) => {
+        try {
+            const response = await fetch(
+                `https://pokeapi.co/api/v2/pokemon?limit=${limit}`,
+            );
+            const data = await response.json();
+            setpokemons(data.results);
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
+    // Initial load: Fetch 10 Pokémon when the screen opens
     useEffect(() => {
-        const fetchPokemons = async () => {
-            try {
-                const response = await fetch(
-                    "https://pokeapi.co/api/v2/pokemon?limit=10",
-                );
-                const data = await response.json();
-                setpokemons(data.results);
-            } catch (err) {
-                console.log(err);
-            }
-        };
-        fetchPokemons();
+        fetchPokemons(10);
     }, []);
+
+    const handleSearch = () => {
+        const limitNumber = parseInt(searchLimit, 10);
+
+        // Make sure it's a valid number greater than 0 before fetching
+        if (!isNaN(limitNumber) && limitNumber > 0) {
+            fetchPokemons(limitNumber);
+            Keyboard.dismiss(); // Hides the keyboard after searching
+        }
+    };
 
     if (!fontsLoaded) {
         return (
@@ -63,28 +80,30 @@ export default function Index() {
             <View style={styles.inputBoxBody}>
                 <TextInput
                     style={styles.inputBox}
-                    placeholder="Name or Number"
+                    placeholder="Enter the number"
+                    value={searchLimit} // Bind the state
+                    onChangeText={setSearchLimit} // Update state when typing
+                    keyboardType="numeric" 
                 />
-                <Pressable style={styles.buttonStyle}>
+                <Pressable style={styles.buttonStyle} onPress={handleSearch}>
                     <Text>Search</Text>
                 </Pressable>
             </View>
-            <View>
+            <View style={styles.flatListContainer}>
                 <FlatList
                     data={pokemons}
                     keyExtractor={(item) => item.name}
+                    numColumns={2}
+                    columnWrapperStyle={styles.row}
+                    contentContainerStyle={{ paddingBottom: 250 }}
+                    showsVerticalScrollIndicator={false}
                     renderItem={({ item }) => {
                         const urlParts = item.url.split("/");
-
                         const pokemonId = urlParts[urlParts.length - 2];
-                        //example : ["https:", "", "pokeapi.co", "api", "v2", "pokemon", "8", ""]
-
-                        // Now we build the official image URL using that ID
-                        const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
+                        const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonId}.png`;
 
                         return (
                             <View style={styles.pokemonCard}>
-                                {/* Render the image from the network using the 'uri' prop */}
                                 <Image
                                     source={{ uri: imageUrl }}
                                     style={styles.pokemonImage}
@@ -95,8 +114,6 @@ export default function Index() {
                             </View>
                         );
                     }}
-                    // Optional: Adds a little gap between items
-                    contentContainerStyle={{ gap: 10, paddingBottom: 20 }}
                 />
             </View>
         </SafeAreaView>
@@ -107,7 +124,7 @@ const styles = StyleSheet.create({
     body: {
         backgroundColor: theme.colors.background,
         flex: 1,
-        padding: 26,
+        padding: 25,
     },
     inputBoxBody: {
         display: "flex",
@@ -116,6 +133,9 @@ const styles = StyleSheet.create({
         alignContent: "center",
         gap: 20,
         marginTop: 30,
+    },
+    flatListContainer: {
+        marginTop: 20,
     },
     headerText: {
         color: theme.colors.primary,
@@ -154,15 +174,15 @@ const styles = StyleSheet.create({
     },
     pokemonCard: {
         backgroundColor: theme.colors.secondry + "20",
-        padding: 15, // Reduced padding slightly to make room for the image
+        width: "48%",
+        paddingVertical: 40,
         borderRadius: 15,
-        flexDirection: "row",
         alignItems: "center",
     },
     pokemonImage: {
-        width: 60,
-        height: 60,
-        marginRight: 15, // Adds space between the image and the text
+        width: 100,
+        height: 100,
+        marginBottom: 10,
     },
     pokemonName: {
         color: theme.colors.primary,
@@ -170,5 +190,9 @@ const styles = StyleSheet.create({
         fontSize: 20,
         textTransform: "capitalize",
         fontWeight: "bold",
+    },
+    row: {
+        justifyContent: "space-between",
+        marginBottom: 15,
     },
 });
