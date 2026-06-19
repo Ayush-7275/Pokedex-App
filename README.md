@@ -15,7 +15,6 @@ A clean, minimal Pokédex built with React Native and Expo — browse the entire
 
 ## Screenshots
 
-> _Add screenshots here_
 
 |      Home Screen       |      Pokémon Detail      |        Base Stats        |
 | :--------------------: | :----------------------: | :----------------------: |
