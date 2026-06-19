@@ -1,8 +1,7 @@
 import { theme } from "@/theme";
-import { useFonts } from "expo-font";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
     FlatList,
     Image,
     Keyboard,
@@ -22,11 +21,6 @@ interface PokeResponse {
 export default function Index() {
     const [pokemons, setpokemons] = useState<PokeResponse[]>([]);
     const [searchLimit, setSearchLimit] = useState(""); // 1. New state for the input box
-
-    const [fontsLoaded] = useFonts({
-        inter: require("@/assets/fonts/Inter-VariableFont_opsz,wght.ttf"),
-        inter_italics: require("@/assets/fonts/Inter-Italic-VariableFont_opsz,wght.ttf"),
-    });
 
     // 2. Extract the fetch function so it takes a "limit" parameter
     const fetchPokemons = async (limit: number) => {
@@ -56,18 +50,6 @@ export default function Index() {
         }
     };
 
-    if (!fontsLoaded) {
-        return (
-            <SafeAreaView
-                style={[
-                    styles.body,
-                    { justifyContent: "center", alignItems: "center" },
-                ]}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
-            </SafeAreaView>
-        );
-    }
-
     return (
         <SafeAreaView style={styles.body}>
             <View>
@@ -83,7 +65,7 @@ export default function Index() {
                     placeholder="Enter the number"
                     value={searchLimit} // Bind the state
                     onChangeText={setSearchLimit} // Update state when typing
-                    keyboardType="numeric" 
+                    keyboardType="numeric"
                 />
                 <Pressable style={styles.buttonStyle} onPress={handleSearch}>
                     <Text>Search</Text>
@@ -100,10 +82,13 @@ export default function Index() {
                     renderItem={({ item }) => {
                         const urlParts = item.url.split("/");
                         const pokemonId = urlParts[urlParts.length - 2];
-                        const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonId}.png`;
-
+                        const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
                         return (
-                            <View style={styles.pokemonCard}>
+                            <Pressable
+                                style={styles.pokemonCard}
+                                onPress={() => {
+                                    router.push(`/pokemon/${item.name}/`);
+                                }}>
                                 <Image
                                     source={{ uri: imageUrl }}
                                     style={styles.pokemonImage}
@@ -111,7 +96,7 @@ export default function Index() {
                                 <Text style={styles.pokemonName}>
                                     {item.name}
                                 </Text>
-                            </View>
+                            </Pressable>
                         );
                     }}
                 />
@@ -140,21 +125,20 @@ const styles = StyleSheet.create({
     headerText: {
         color: theme.colors.primary,
         fontSize: 48,
-        fontWeight: "900",
         marginBottom: 10,
         marginTop: 20,
         textAlign: "left",
-        fontFamily: "inter",
+        fontFamily: "poppinsExtraBold",
     },
     headerBody: {
         color: theme.colors.primary + "80",
-        fontFamily: "inter_italics",
+        fontFamily: "poppinsSemiBold",
         fontSize: 16,
         lineHeight: 30,
     },
     inputBox: {
         backgroundColor: theme.colors.secondry + "30",
-        fontFamily: "inter",
+        fontFamily: "poppins",
         height: 60,
         paddingHorizontal: 30,
         borderRadius: 20,
@@ -174,10 +158,10 @@ const styles = StyleSheet.create({
     },
     pokemonCard: {
         backgroundColor: theme.colors.secondry + "20",
-        width: "48%",
         paddingVertical: 40,
         borderRadius: 15,
         alignItems: "center",
+        width: "48%",
     },
     pokemonImage: {
         width: 100,
@@ -186,7 +170,7 @@ const styles = StyleSheet.create({
     },
     pokemonName: {
         color: theme.colors.primary,
-        fontFamily: "inter",
+        fontFamily: "poppinsSemiBold",
         fontSize: 20,
         textTransform: "capitalize",
         fontWeight: "bold",
